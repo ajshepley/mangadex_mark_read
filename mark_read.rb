@@ -100,7 +100,7 @@ def help_message
   HELP
 end
 
-def main
+def parse_options
   # TODO: Convert to OptionParser and delete print_help
   opts = GetoptLong.new(
     ["--manga_id", "-m", GetoptLong::REQUIRED_ARGUMENT],
@@ -113,54 +113,58 @@ def main
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
   )
 
-  username = nil
-  password = nil
-  translated_language = "en"
-  manga_id = nil
-  manga_url = nil
-  session_token = nil
-  print_token = false
+  options = {
+    translated_language: "en",
+  }
 
   opts.each do |opt, arg|
     case opt
     when "--username"
-      username = arg
+      options[:username] = arg
     when "--password"
-      password = arg
+      options[:password] = arg
     when "--manga_id"
-      manga_id = arg
+      options[:manga_id] = arg
     when "--url"
-      manga_url = arg
+      options[:manga_url] = arg
     when "--token"
-      session_token = arg
+      options[:session_token] = arg if arg && !arg.strip.empty?
     when "--print-token"
-      print_token = true
+      options[:print_token] = true
     when "--language"
-      translated_language = arg if arg
+      options[:translated_language] = arg if arg && !arg.strip.empty?
     when "--help"
       puts help_message
       exit(0)
     end
   end
 
-  manga_id ||= parse_manga_id(manga_url: manga_url)
+  options
+end
+
+def main
+  options = parse_options
+  manga_id = options[:manga_id] || parse_manga_id(manga_url: options[:manga_url])
 
   unless manga_id
     puts "No --manga_id provided. Aborting."
     exit(1)
   end
 
-  session_token ||= get_login_session_token(username: username, password: password)
+  session_token = options[:session_token] || get_login_session_token(
+    username: options[:username],
+    password: options[:password],
+  )
 
   unless session_token
     puts "Failed to get session token. Response body: #{result_body}"
     exit(1)
   end
 
-  puts "Token is: #{session_token}" if print_token
+  puts "Token is: #{session_token}" if options[:print_token]
 
   # manga = get_manga_volumes_and_chapters(manga_id: manga_id, session_token: session_token)
-  chapters_list_result = get_chapters_list(manga_id: manga_id, translated_language: translated_language)
+  chapters_list_result = get_chapters_list(manga_id: manga_id, translated_language: options[:translated_language])
   read_chapters_result = get_read_markers(manga_id: manga_id, token: session_token)
 
   chapter_list = JSON.parse(chapters_list_result.body).dig("results")
