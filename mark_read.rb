@@ -137,6 +137,12 @@ def parse_options
     end
   end
 
+  unless options.size > 1
+    puts "No arguments provided."
+    puts help_message
+    exit(1)
+  end
+
   options
 end
 
