@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "uri"
 require "json"
 require "byebug"
 require "getoptlong"
+require_relative "lib/dex_http.rb"
+
+include DexHttp
 
 # See https://api.mangadex.org/docs.html#section/Rate-limits
 MAX_REQUESTS_PER_SECOND = 5
@@ -107,31 +108,6 @@ def mark_chapter_read(chapter_id:, token:)
   url = API_BASE_URL + "/chapter/#{chapter_id}/read"
 
   post(url: url, body: {}, headers: headers)
-end
-
-#### HTTP Methods
-
-def get(url:, headers:, query_params: nil)
-  uri = URI.parse(url)
-  uri.query = URI.encode_www_form(query_params) if query_params
-
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = true
-  request = Net::HTTP::Get.new(uri.request_uri, headers)
-
-  http.request(request)
-end
-
-def post(url:, body:, headers:, query_params: nil)
-  uri = URI.parse(url)
-  uri.query = URI.encode_www_form(query_params) if query_params
-
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = true
-  request = Net::HTTP::Post.new(uri.request_uri, headers)
-  request.body = body.to_json if body
-
-  http.request(request)
 end
 
 #### Logic
