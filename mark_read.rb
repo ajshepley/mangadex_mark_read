@@ -79,22 +79,22 @@ end
 def help_message
   <<~HELP
     mark_read.rb [OPTIONS]
-    -h, --help:
-      Show this help message
-    -m, --mange_id [id]:
-      The manga id to mark read. Must provide this or an explicit --url.
-    -u, --username [name]:
-      The username to login and retrieve a token with. Must also have a --password.
-    -p, --password [password]:
-      The password to login and retrieve a token with. Must also have a --username.
-    -r, --url [url]:
-      The URL of the manga to mark as read. Must provide either this or an explicit --manga_id.
-    -l, --language [language_code]:
-      The language to use when filtering chapter lookups. Defaults to 'en' if not provided.
-    -t, --token [token]:
-      The (bearer) session token to use. --username and --password are ignored if a token is provided.
-    -d, --print-token:
-      Before performing the requests, print out the session token being used. Can be provided as --token for subsequent invocations.
+      -h, --help:
+        Show this help message
+      -m, --mange_id [id]:
+        The manga id to mark read. Must provide this or an explicit --url.
+      -u, --username [name]:
+        The username to login and retrieve a token with. Must also have a --password.
+      -p, --password [password]:
+        The password to login and retrieve a token with. Must also have a --username.
+      -r, --url [url]:
+        The URL of the manga to mark as read. Must provide either this or an explicit --manga_id.
+      -l, --language [language_code]:
+        The language to use when filtering chapter lookups. Defaults to 'en' if not provided.
+      -t, --token [token]:
+        The (bearer) session token to use. --username and --password are ignored if a token is provided.
+      -d, --print-token:
+        Before performing the requests, print out the session token being used. Can be provided as --token for subsequent invocations.
   HELP
 end
 
