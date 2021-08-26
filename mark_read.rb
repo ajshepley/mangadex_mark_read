@@ -2,10 +2,8 @@
 
 require "json"
 require "getoptlong"
-require_relative "lib/dex_http.rb"
 require_relative "lib/dex_api.rb"
 
-include DexHttp
 include DexApi
 
 # See https://api.mangadex.org/docs.html#section/Rate-limits
@@ -175,8 +173,8 @@ def main
 
   chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
 
-  puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} chapters. "\
-      "User's total read chapters size (all languages): #{read_chapters.size}."
+  puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
+      "(#{options[:translated_language]}) chapters. User's total read chapters size (all languages): #{read_chapters.size}."
 
   # TODO: Mangadex will sometimes return 200 but fail to mark some chapters as read.
   mark_as_read(
