@@ -89,8 +89,10 @@ def help_message
       The username to login and retrieve a token with. Must also have a --password.
     -p, --password [password]:
       The password to login and retrieve a token with. Must also have a --username.
-    -l, --url [url]:
+    -r, --url [url]:
       The URL of the manga to mark as read. Must provide either this or an explicit --manga_id.
+    -l, --language [language_code]:
+      The language to use when filtering chapter lookups. Defaults to 'en' if not provided.
     -t, --token [token]:
       The (bearer) session token to use. --username and --password are ignored if a token is provided.
     -d, --print-token:
@@ -101,12 +103,13 @@ end
 def main
   # TODO: Convert to OptionParser and delete print_help
   opts = GetoptLong.new(
-    ["--manga_id", "-m", GetoptLong::OPTIONAL_ARGUMENT],
-    ["--username", "-u", GetoptLong::OPTIONAL_ARGUMENT],
-    ["--password", "-p", GetoptLong::OPTIONAL_ARGUMENT],
-    ["--url", "-l", GetoptLong::OPTIONAL_ARGUMENT],
-    ["--token", "-t", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--manga_id", "-m", GetoptLong::REQUIRED_ARGUMENT],
+    ["--username", "-u", GetoptLong::REQUIRED_ARGUMENT],
+    ["--password", "-p", GetoptLong::REQUIRED_ARGUMENT],
+    ["--url", "-r", GetoptLong::REQUIRED_ARGUMENT],
+    ["--token", "-t", GetoptLong::REQUIRED_ARGUMENT],
     ["--print-token", "-d", GetoptLong::NO_ARGUMENT],
+    ["--language", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
   )
 
@@ -132,6 +135,8 @@ def main
       session_token = arg
     when "--print-token"
       print_token = true
+    when "--language"
+      translated_language = arg if arg
     when "--help"
       puts help_message
       exit(0)
@@ -167,7 +172,7 @@ def main
   chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
 
   puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} chapters. "\
-      "Read chapters size: #{read_chapters.size}."
+      "User's total read chapters size (all languages): #{read_chapters.size}."
 
   # TODO: Mangadex will sometimes return 200 but fail to mark some chapters as read.
   mark_as_read(
