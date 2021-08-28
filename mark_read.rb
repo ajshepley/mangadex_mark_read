@@ -4,8 +4,6 @@ require "json"
 require "getoptlong"
 require_relative "lib/dex_api.rb"
 
-include DexApi
-
 # See https://api.mangadex.org/docs.html#section/Rate-limits
 MAX_REQUESTS_PER_SECOND = 5
 REFRESH_INTERVAL_SECONDS = 1.1
@@ -14,13 +12,15 @@ REFRESH_INTERVAL_SECONDS = 1.1
 # Best effort stripping the ?page query param.
 MANGA_ID_URL_PATTERN = %r{\Ahttps://mangadex\.org/title/([^/]+)/([^/]+)\?.*}
 
+@dex_api = DexApi::Client.get
+
 def get_login_session_token(username:, password:)
   unless username && !username.empty? && password && !password.empty?
     puts "A valid username and password are needed. Aborting."
     exit(1)
   end
 
-  login_result = login(username: username, password: password)
+  login_result = @dex_api.login(username: username, password: password)
   result_body = login_result.body
 
   unless login_result.code_type == Net::HTTPOK && result_body
@@ -43,7 +43,7 @@ def mark_as_read(chapter_ids:, max_requests_per_second:, refresh_interval_second
     sleep_and_log(sleep_time_seconds: refresh_interval_seconds) if (index + 1) % max_requests_per_second == 0
 
     puts "Marking chapter #{chapter_id}, index #{index} as read."
-    result = mark_chapter_read(chapter_id: chapter_id, token: token)
+    result = @dex_api.mark_chapter_read(chapter_id: chapter_id, token: token)
 
     puts "Result for chapter #{chapter_id} at index #{index} is #{result}"
   end
@@ -168,9 +168,12 @@ def main
 
   puts "Token is: #{session_token}" if options[:print_token]
 
-  # manga = get_manga_volumes_and_chapters(manga_id: manga_id, session_token: session_token)
-  chapters_list_result = get_chapters_list(manga_id: manga_id, translated_language: options[:translated_language])
-  read_chapters_result = get_read_markers(manga_id: manga_id, token: session_token)
+  # manga = @dex_api.get_manga_volumes_and_chapters(manga_id: manga_id, session_token: session_token)
+  chapters_list_result = @dex_api.get_chapters_list(
+    manga_id: manga_id,
+    translated_language: options[:translated_language]
+  )
+  read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
 
   chapter_list = JSON.parse(chapters_list_result.body).dig("results")
   read_chapters = JSON.parse(read_chapters_result.body).dig("data")
