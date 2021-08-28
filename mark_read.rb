@@ -8,6 +8,11 @@ require_relative "lib/dex_api.rb"
 MAX_REQUESTS_PER_SECOND = 5
 REFRESH_INTERVAL_SECONDS = 1.1
 
+# I'm not sure if the reason behind the inconsistency is cache weirdness, API weirdness, or DB issues.
+# Might as well give them time for any DB operations to complete.
+DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS = 5
+MAX_LOOP_REPEATS = 4
+
 # e.g. https://mangadex.org/title/4fd4f8c0-fab8-4ee5-ab9e-5907720afed9/verndio-surreal-sword-saga
 # Best effort stripping the ?page query param.
 MANGA_ID_URL_PATTERN = %r{\Ahttps://mangadex\.org/title/([^/]+)/([^/]+)}
@@ -96,6 +101,8 @@ def help_message
         The (bearer) session token to use. --username and --password are ignored if a token is provided.
       -d, --print-token:
         Before performing the requests, print out the session token being used. Can be provided as --token for subsequent invocations.
+      -f, --force [delay between loops in seconds, optional]:
+        Force the chapters to be marked as read, looping until the API says all chapters are read. Max limit: 5 loops.
   HELP
 end
 
@@ -108,6 +115,7 @@ def parse_options
     ["--url", "-r", GetoptLong::REQUIRED_ARGUMENT],
     ["--token", "-t", GetoptLong::REQUIRED_ARGUMENT],
     ["--print-token", "-d", GetoptLong::NO_ARGUMENT],
+    ["--force", "-f", GetoptLong::OPTIONAL_ARGUMENT],
     ["--language", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
   )
@@ -130,6 +138,9 @@ def parse_options
       options[:session_token] = arg if arg && !arg.strip.empty?
     when "--print-token"
       options[:print_token] = true
+    when "--force"
+      options[:force_delay] = arg if arg && !arg.strip.empty?
+      options[:force_delay] ||= DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS
     when "--language"
       options[:translated_language] = arg if arg && !arg.strip.empty?
     when "--help"
@@ -173,26 +184,39 @@ def main
     manga_id: manga_id,
     translated_language: options[:translated_language]
   )
-  read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
 
-  chapter_list = JSON.parse(chapters_list_result.body).dig("results")
-  read_chapters = JSON.parse(read_chapters_result.body).dig("data")
+  # Loop up to MAX_LOOP_REPEATS, only sleep when necessary.
+  max_attempts = options[:force_delay] ? MAX_LOOP_REPEATS + 1 : 1
+  attempt = 0
 
-  # Let API quota refresh a bit.
-  sleep(REFRESH_INTERVAL_SECONDS)
+  while attempt < max_attempts
+    sleep(options[:force_delay]) if attempt > 0
 
-  chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
+    read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
 
-  puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
-      "(#{options[:translated_language]}) chapters. User's total read chapters size (all languages): #{read_chapters.size}."
+    read_chapters = JSON.parse(read_chapters_result.body).dig("data")
+    chapter_list = JSON.parse(chapters_list_result.body).dig("results")
 
-  # TODO: Mangadex will sometimes return 200 but fail to mark some chapters as read.
-  mark_as_read(
-    chapter_ids: chapter_ids_to_mark,
-    max_requests_per_second: MAX_REQUESTS_PER_SECOND,
-    refresh_interval_seconds: REFRESH_INTERVAL_SECONDS,
-    token: session_token,
-  )
+    chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
+    all_chapters_marked = chapter_ids_to_mark.none?
+
+    # Let API quota refresh a bit.
+    sleep(REFRESH_INTERVAL_SECONDS) unless all_chapters_marked
+
+    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
+        "(#{options[:translated_language]}) chapters. User's total read chapters size "\
+        "(all languages): #{read_chapters.size}. Attempt: #{attempt}."
+
+    # FIXME: Mangadex will sometimes return 200 but fail to mark some chapters as read.
+    mark_as_read(
+      chapter_ids: chapter_ids_to_mark,
+      max_requests_per_second: MAX_REQUESTS_PER_SECOND,
+      refresh_interval_seconds: REFRESH_INTERVAL_SECONDS,
+      token: session_token,
+    ) unless all_chapters_marked
+
+    attempt = all_chapters_marked ? attempt = max_attempts : attempt += 1
+  end
 
   # TODO: use result of get_chapters_list with /chapter/id/read
   ## Has extra rate limits (300 per 10 minutes on top of 5 per second max.)

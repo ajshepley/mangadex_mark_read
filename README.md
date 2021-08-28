@@ -26,6 +26,8 @@ mark_read.rb [OPTIONS]
     The (bearer) session token to use. --username and --password are ignored if a token is provided.
   -d, --print-token:
     Before performing the requests, print out the session token being used. Can be provided as --token for subsequent invocations.
+  -f, --force [delay between loops in seconds, optional]:
+    Force the chapters to be marked as read, looping until the API says all chapters are read. Max limit: 5 loops.
 ```
 
 ## Why
@@ -39,6 +41,7 @@ This script offers a quick way to "catch up" your Follow of a manga on mangadex 
 * Mangadex has some rate limits, so this script will try to stay under them. But they could always change, and if they were significantly reduced, then you run the risk of getting throttled. User beware, etc.
 
 * The chapters-related APIs are not quite consistent and a bit buggy, so you may have to run the script a couple of times with the same manga in order to fully mark it as read. It's otherwise idempotent, as far as I can tell.
+  * To help deal with this, you can use the `--force` flag to make the script loop a few times or until it finds no more unread chapters.
 
 * If you provide a username and password, the script logs in via the API and retrieves a session token. Otherwise, you can provide one directly. Session tokens can expire, so make sure to use a username and password once in a while.
 
