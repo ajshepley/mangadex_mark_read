@@ -11,7 +11,8 @@ MAX_REQUESTS_PER_SECOND = 5
 REFRESH_INTERVAL_SECONDS = 1.1
 
 # e.g. https://mangadex.org/title/4fd4f8c0-fab8-4ee5-ab9e-5907720afed9/verndio-surreal-sword-saga
-MANGA_ID_URL_PATTERN = %r{\Ahttps://mangadex\.org/title/([^/]+)/([^/]+)}
+# Best effort stripping the ?page query param.
+MANGA_ID_URL_PATTERN = %r{\Ahttps://mangadex\.org/title/([^/]+)/([^/]+)\?.*}
 
 def get_login_session_token(username:, password:)
   unless username && !username.empty? && password && !password.empty?
