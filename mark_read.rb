@@ -190,8 +190,6 @@ def main
   attempt = 0
 
   while attempt < max_attempts
-    sleep(options[:force_delay]) if attempt > 0
-
     read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
 
     read_chapters = JSON.parse(read_chapters_result.body).dig("data")
@@ -200,8 +198,14 @@ def main
     chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
     all_chapters_marked = chapter_ids_to_mark.none?
 
+    time_to_sleep = REFRESH_INTERVAL_SECONDS
+    if attempt > 0
+      time_to_sleep = options[:force_delay]
+      puts "Sleeping #{time_to_sleep} before marking all as read for attempt #{attempt}."
+    end
+
     # Let API quota refresh a bit.
-    sleep(REFRESH_INTERVAL_SECONDS) unless all_chapters_marked
+    sleep(time_to_sleep) unless all_chapters_marked
 
     puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
         "(#{options[:translated_language]}) chapters. User's total read chapters size "\
