@@ -83,3 +83,4 @@ This script offers a quick way to "catch up" your Follow of a manga on mangadex 
 * Refactor mark_read retry loop into generic chapter_operation loop, such that it can be used for mark_read, mark_unread and other chapter API operations.
 * Add a Silent mode.
 * Check for eventual consistency; previously, inconsistent results would persist, but perhaps that was a bug in some eventual-persistence code that could be fixed later on.
+  * For now, we set a default delay of 20s between retries, before checking the API for unread chapters.
