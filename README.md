@@ -34,15 +34,20 @@ mark_read.rb [OPTIONS]
 
 <summary>Example of Use (click to expand)</summary>
 
-```log
-ruby ./mark_read.rb --username your_username_here --password your_password_here --url https://mangadex.org/title/c84acc63-b8c7-4ae3-b44e-277ac3501f5c/shijou-saikyou-orck-san-no-tanoshii-tanetsuke-harem-zukuri?page=1 -f
-Parsed manga id c84acc63-b8c7-4ae3-b44e-277ac3501f5c, for manga: 'Shijou Saikyou Orck San No Tanoshii Tanetsuke Harem Zukuri'
-Marking 7 chapters as read out of 34 (en) chapters. User's total read chapters size (all languages): 27.
-Marking chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987, index 0 as read.
-Result for chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987 at index 0 is #<Net::HTTPOK:0x00007fffce242ae0>
-Marking chapter aa636cdb-e1e7-4f48-b2de-f548886d2d00, index 1 as read.
-...
-```
+> ~$ ruby ./mark_read.rb --username your_username_here --password your_password_here --url https://mangadex.org/title/c84acc63-b8c7-4ae3-b44e-277ac3501f5c/shijou-saikyou-orck-san-no-tanoshii-tanetsuke-harem-zukuri?page=1 -f
+>
+> \> Parsed manga id c84acc63-b8c7-4ae3-b44e-277ac3501f5c, for manga: 'Shijou Saikyou Orck San No Tanoshii Tanetsuke Harem Zukuri'
+>
+> \> Marking 7 chapters as read out of 34 (en) chapters. User's total read chapters size (all languages): 27.
+>
+> \> Marking chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987, index 0 as read.
+>
+> \> Result for chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987 at index 0 is #<Net::HTTPOK:0x00007fffce242ae0>
+>
+> \> Marking chapter aa636cdb-e1e7-4f48-b2de-f548886d2d00, index 1 as read.
+>
+> ...
+
 
 </details>
 
@@ -63,7 +68,15 @@ This script offers a quick way to "catch up" your Follow of a manga on mangadex 
 
 * If you provide a `--url` instead of a `--manga_id`, then the script uses a simple regex to extract the manga id. This can be easier to use when marking a bunch of different manga as read. But if the URL format changes, this will break.
 
-* No pagination/cursor support yet, so this may not work when a manga has hundreds of chapters.
+* No pagination/cursor support yet, so this **may not work** when a manga has hundreds of chapters.
 
 * No true rate-limit handling (422 response or X-Ratelimit headers support) nor http redirect support.
 
+## TODO
+
+* Observe and obey the X-RateLimit headers, and turn the existing ratelimit functionality into a user-controlled cap on top.
+  * Obey the greater per-10-minutes rate limits.
+* Convert `GetoptLong` command args setup to `OptionParser`.
+* Split up `main` method.
+* Add integration tests.
+* Add mark-as-unread functionality to support integration tests.

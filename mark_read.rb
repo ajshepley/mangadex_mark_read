@@ -222,13 +222,6 @@ def main
 
     attempt = all_chapters_marked ? attempt = max_attempts : attempt += 1
   end
-
-  # TODO: use result of get_chapters_list with /chapter/id/read
-  ## Has extra rate limits (300 per 10 minutes on top of 5 per second max.)
-  ## Exclude read chapters
-  # TODO: This doesn't seem to mark the Eye as closed. What is the difference compared to clicking the button in the browser?
-  # Also, the results from read_chapters_Results are different than expected?
-  ## Actually, it looks like the recent "desktop view" change made this behave properly.
 end
 
 main

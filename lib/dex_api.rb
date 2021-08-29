@@ -38,8 +38,7 @@ module DexApi
       get(url: url, headers: headers)
     end
 
-    # TODO: Loop with limit, rate limit
-    # https://api.mangadex.org/docs.html#operation/get-author
+    # https://api.mangadex.org/docs.html#operation/get-chapter
     def get_chapters_list(manga_id:, translated_language:)
       headers = JSON_TYPE_HEADER
       url = API_BASE_URL + "/chapter"
