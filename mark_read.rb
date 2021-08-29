@@ -82,6 +82,43 @@ def parse_manga_id(manga_url:)
   manga_id
 end
 
+def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_result:, retry_delay:, language:)
+  attempt = 0
+
+  while attempt < max_attempts
+    read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
+
+    read_chapters = JSON.parse(read_chapters_result.body).dig("data")
+    chapter_list = JSON.parse(chapters_list_result.body).dig("results")
+
+    chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
+    all_chapters_marked = chapter_ids_to_mark.none?
+
+    time_to_sleep = REFRESH_INTERVAL_SECONDS
+    if attempt > 0
+      time_to_sleep = retry_delay
+      puts "Sleeping #{time_to_sleep} before marking all as read for attempt #{attempt}."
+    end
+
+    # Let API quota refresh a bit.
+    sleep(time_to_sleep) unless all_chapters_marked
+
+    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
+        "(#{language}) chapters. User's total read chapters size "\
+        "(all languages): #{read_chapters.size}. Attempt: #{attempt}."
+
+    # FIXME: Mangadex will sometimes return 200 but fail to mark some chapters as read.
+    mark_as_read(
+      chapter_ids: chapter_ids_to_mark,
+      max_requests_per_second: MAX_REQUESTS_PER_SECOND,
+      refresh_interval_seconds: REFRESH_INTERVAL_SECONDS,
+      token: session_token,
+    ) unless all_chapters_marked
+
+    attempt = all_chapters_marked ? attempt = max_attempts : attempt += 1
+  end
+end
+
 def help_message
   <<~HELP
     mark_read.rb [OPTIONS]
@@ -158,7 +195,6 @@ def parse_options
   options
 end
 
-# TODO: This method could probably be split up at this point.
 def main
   options = parse_options
   manga_id = options[:manga_id] || parse_manga_id(manga_url: options[:manga_url])
@@ -180,48 +216,20 @@ def main
 
   puts "Token is: #{session_token}" if options[:print_token]
 
-  # manga = @dex_api.get_manga_volumes_and_chapters(manga_id: manga_id, session_token: session_token)
-  chapters_list_result = @dex_api.get_chapters_list(
-    manga_id: manga_id,
-    translated_language: options[:translated_language]
-  )
+  language = options[:translated_language]
+  chapters_list_result = @dex_api.get_chapters_list(manga_id: manga_id, translated_language: language)
 
   # Loop up to MAX_LOOP_REPEATS, only sleep when necessary.
   max_attempts = options[:force_delay] ? MAX_LOOP_REPEATS + 1 : 1
-  attempt = 0
 
-  while attempt < max_attempts
-    read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
-
-    read_chapters = JSON.parse(read_chapters_result.body).dig("data")
-    chapter_list = JSON.parse(chapters_list_result.body).dig("results")
-
-    chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
-    all_chapters_marked = chapter_ids_to_mark.none?
-
-    time_to_sleep = REFRESH_INTERVAL_SECONDS
-    if attempt > 0
-      time_to_sleep = options[:force_delay]
-      puts "Sleeping #{time_to_sleep} before marking all as read for attempt #{attempt}."
-    end
-
-    # Let API quota refresh a bit.
-    sleep(time_to_sleep) unless all_chapters_marked
-
-    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
-        "(#{options[:translated_language]}) chapters. User's total read chapters size "\
-        "(all languages): #{read_chapters.size}. Attempt: #{attempt}."
-
-    # FIXME: Mangadex will sometimes return 200 but fail to mark some chapters as read.
-    mark_as_read(
-      chapter_ids: chapter_ids_to_mark,
-      max_requests_per_second: MAX_REQUESTS_PER_SECOND,
-      refresh_interval_seconds: REFRESH_INTERVAL_SECONDS,
-      token: session_token,
-    ) unless all_chapters_marked
-
-    attempt = all_chapters_marked ? attempt = max_attempts : attempt += 1
-  end
+  loop_and_mark_read(
+    max_attempts: max_attempts,
+    manga_id: manga_id,
+    session_token: session_token,
+    chapters_list_result: chapters_list_result,
+    retry_delay: options[:force_delay],
+    language: language,
+  )
 end
 
 main
