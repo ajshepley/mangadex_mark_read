@@ -30,6 +30,22 @@ mark_read.rb [OPTIONS]
     Force the chapters to be marked as read, looping until the API says all chapters are read. Max limit: 5 loops.
 ```
 
+<details>
+
+<summary>Example of Use (click to expand)</summary>
+
+```log
+ruby ./mark_read.rb --username your_username_here --password your_password_here --url https://mangadex.org/title/c84acc63-b8c7-4ae3-b44e-277ac3501f5c/shijou-saikyou-orck-san-no-tanoshii-tanetsuke-harem-zukuri?page=1 -f
+Parsed manga id c84acc63-b8c7-4ae3-b44e-277ac3501f5c, for manga: 'Shijou Saikyou Orck San No Tanoshii Tanetsuke Harem Zukuri'
+Marking 7 chapters as read out of 34 (en) chapters. User's total read chapters size (all languages): 27.
+Marking chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987, index 0 as read.
+Result for chapter 49f8f2a0-64da-43ab-a89d-6bdb1103a987 at index 0 is #<Net::HTTPOK:0x00007fffce242ae0>
+Marking chapter aa636cdb-e1e7-4f48-b2de-f548886d2d00, index 1 as read.
+...
+```
+
+</details>
+
 ## Why
 
 Mangadex was down for a while, so users may have read chapters on other sites. Translation groups are returning to the site and uploading again, so users' existing Follows lists will be out of date.

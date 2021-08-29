@@ -158,6 +158,7 @@ def parse_options
   options
 end
 
+# TODO: This method could probably be split up at this point.
 def main
   options = parse_options
   manga_id = options[:manga_id] || parse_manga_id(manga_url: options[:manga_url])
