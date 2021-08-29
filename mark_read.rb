@@ -10,7 +10,7 @@ REFRESH_INTERVAL_SECONDS = 1.1
 
 # I'm not sure if the reason behind the inconsistency is cache weirdness, API weirdness, or DB issues.
 # Might as well give them time for any DB operations to complete.
-DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS = 5
+DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS = 10
 MAX_LOOP_REPEATS = 4
 
 # e.g. https://mangadex.org/title/4fd4f8c0-fab8-4ee5-ab9e-5907720afed9/verndio-surreal-sword-saga
@@ -97,15 +97,15 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     time_to_sleep = REFRESH_INTERVAL_SECONDS
     if attempt > 0
       time_to_sleep = retry_delay
-      puts "Sleeping #{time_to_sleep} before marking all as read for attempt #{attempt}."
+      puts "Detected #{chapter_ids_to_mark.size} chapters still not marked read."
+      puts "Sleeping #{time_to_sleep} seconds before marking all as read for retry attempt #{attempt}."
     end
 
     # Let API quota refresh a bit.
     sleep(time_to_sleep) unless all_chapters_marked
 
-    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} "\
-        "(#{language}) chapters. User's total read chapters size "\
-        "(all languages): #{read_chapters.size}. Attempt: #{attempt}."
+    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} (#{language}) chapters."
+    puts "User's total read chapters size (all languages): #{read_chapters.size}. Attempt: #{attempt + 1}."
 
     # FIXME: Mangadex will sometimes return 200 but fail to mark some chapters as read.
     mark_as_read(

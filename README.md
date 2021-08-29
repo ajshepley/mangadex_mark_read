@@ -80,3 +80,4 @@ This script offers a quick way to "catch up" your Follow of a manga on mangadex 
 * Split up `main` method.
 * Add integration tests.
 * Add mark-as-unread functionality to support integration tests.
+* Add a Silent mode.
