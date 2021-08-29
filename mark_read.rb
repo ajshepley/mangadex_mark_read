@@ -102,21 +102,21 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
 
     chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
 
+    if attempt > 0 && chapter_ids_to_mark.any?
+      puts "Detected #{chapter_ids_to_mark.size} chapters still not marked read. Will retry, attempt: #{attempt}."
+    end
+
+    # Let API quota refresh a bit.
+    sleep(API_REFRESH_INTERVAL_SECONDS)
+
+    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} (#{language}) chapters."
+    puts "User's total read chapters size (all languages): #{read_chapters.size}. Attempt: #{attempt + 1}.\n"
+
     # The API says all chapters are marked as read, so we're done here.
     if chapter_ids_to_mark.none?
       puts "All chapters successfully marked as read, according to the API."
       return
     end
-
-    if attempt > 0
-      puts "Detected #{chapter_ids_to_mark.size} chapters still not marked read. Will retry, attempt: #{attempt}."
-    end
-
-    # Let API quota refresh a bit.
-    animated_sleep(sleep_time_seconds: API_REFRESH_INTERVAL_SECONDS)
-
-    puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} (#{language}) chapters."
-    puts "User's total read chapters size (all languages): #{read_chapters.size}. Attempt: #{attempt + 1}.\n"
 
     # FIXME: Mangadex will sometimes return 200 but fail to mark some chapters as read.
     mark_as_read(
