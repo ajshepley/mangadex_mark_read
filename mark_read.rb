@@ -6,11 +6,11 @@ require_relative "lib/dex_api.rb"
 
 # See https://api.mangadex.org/docs.html#section/Rate-limits
 MAX_REQUESTS_PER_SECOND = 5
-REFRESH_INTERVAL_SECONDS = 1.1
+API_REFRESH_INTERVAL_SECONDS = 1.1
 
 # I'm not sure if the reason behind the inconsistency is cache weirdness, API weirdness, or DB issues.
 # Might as well give them time for any DB operations to complete.
-DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS = 10
+DEFAULT_DELAY_BETWEEN_LOOPS_SECONDS = 30
 MAX_LOOP_REPEATS = 4
 
 # e.g. https://mangadex.org/title/4fd4f8c0-fab8-4ee5-ab9e-5907720afed9/verndio-surreal-sword-saga
@@ -55,8 +55,17 @@ def mark_as_read(chapter_ids:, max_requests_per_second:, refresh_interval_second
 end
 
 def sleep_and_log(sleep_time_seconds: 1)
-  puts "Sleeping for #{sleep_time_seconds} to refresh API usage."
-  sleep(sleep_time_seconds)
+  puts "Sleeping for #{sleep_time_seconds} seconds to refresh API usage."
+  animated_sleep(sleep_time_seconds: sleep_time_seconds)
+end
+
+def animated_sleep(sleep_time_seconds:)
+  print("Sleeping")
+  sleep_time_seconds.to_i.times do
+    print(".")
+    sleep(1)
+  end
+  puts "\n"
 end
 
 def parse_manga_id(manga_url:)
@@ -94,7 +103,7 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
     all_chapters_marked = chapter_ids_to_mark.none?
 
-    time_to_sleep = REFRESH_INTERVAL_SECONDS
+    time_to_sleep = API_REFRESH_INTERVAL_SECONDS
     if attempt > 0
       time_to_sleep = retry_delay
       puts "Detected #{chapter_ids_to_mark.size} chapters still not marked read."
@@ -102,7 +111,7 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     end
 
     # Let API quota refresh a bit.
-    sleep(time_to_sleep) unless all_chapters_marked
+    animated_sleep(sleep_time_seconds: time_to_sleep) unless all_chapters_marked
 
     puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} (#{language}) chapters."
     puts "User's total read chapters size (all languages): #{read_chapters.size}. Attempt: #{attempt + 1}."
@@ -111,7 +120,7 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     mark_as_read(
       chapter_ids: chapter_ids_to_mark,
       max_requests_per_second: MAX_REQUESTS_PER_SECOND,
-      refresh_interval_seconds: REFRESH_INTERVAL_SECONDS,
+      refresh_interval_seconds: API_REFRESH_INTERVAL_SECONDS,
       token: session_token,
     ) unless all_chapters_marked
 
