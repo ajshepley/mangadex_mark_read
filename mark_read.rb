@@ -38,8 +38,8 @@ end
 
 def parse_chapter_ids_to_mark(total_chapter_list:, read_chapters:)
   total_chapter_list
-    .reject { |chapter| read_chapters.include?(chapter.dig("data", "id")) }
-    .map { |chapter| chapter.dig("data", "id") }
+    .map { |chapter| chapter["id"] }
+    .reject { |chapter_id| read_chapters.include?(chapter_id) }
 end
 
 # TODO: Check for the X-Ratelimit headers and act accordingly.
@@ -98,7 +98,7 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     read_chapters_result = @dex_api.get_read_markers(manga_id: manga_id, token: session_token)
 
     read_chapters = JSON.parse(read_chapters_result.body).dig("data")
-    chapter_list = JSON.parse(chapters_list_result.body).dig("results")
+    chapter_list = JSON.parse(chapters_list_result.body).dig("data")
 
     chapter_ids_to_mark = parse_chapter_ids_to_mark(total_chapter_list: chapter_list, read_chapters: read_chapters)
 
@@ -109,6 +109,7 @@ def loop_and_mark_read(max_attempts:, manga_id:, session_token:, chapters_list_r
     # Let API quota refresh a bit.
     sleep(API_REFRESH_INTERVAL_SECONDS)
 
+    # TODO: We can pull the chapter number, volume number and chapter name from chapter_list.
     puts "Marking #{chapter_ids_to_mark.size} chapters as read out of #{chapter_list.size} (#{language}) chapters."
     puts "User's total read chapters size (all languages): #{read_chapters.size}. Attempt: #{attempt + 1}.\n"
 
